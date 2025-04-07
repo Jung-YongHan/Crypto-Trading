@@ -4,7 +4,7 @@ from typing import List, Dict
 
 import requests
 
-from multi_agent_system.trading_system.core.constants import (
+from core.constants import (
     UNIT_MAP,
     DEFAULT_UNIT,
     TIME_DELTA_MAP,

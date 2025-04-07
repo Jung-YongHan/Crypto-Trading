@@ -5,20 +5,20 @@ from typing import Tuple
 
 from dotenv import load_dotenv
 
-from multi_agent_system.trading_system.core.constants import (
+from core.constants import (
     TIME_DELTA_MAP,
     DEFAULT_UNIT,
 )
-from multi_agent_system.trading_system.core.data_collector import DataCollector
-from multi_agent_system.trading_system.core.portfolio_manager import (
+from core.data_collector import DataCollector
+from core.portfolio_manager import (
     PortfolioManager,
 )
-from multi_agent_system.trading_system.core.price_analysis_expert import (
+from core.price_analysis_expert import (
     PriceAnalysisExpert,
 )
-from multi_agent_system.trading_system.core.trading_expert import TradingExpert
-from multi_agent_system.trading_system.system.record_manager import RecordManager
-from multi_agent_system.trading_system.utils.time_utils import calculate_elapsed_time
+from core.trading_expert import TradingExpert
+from system.record_manager import RecordManager
+from utils.time_utils import calculate_elapsed_time
 
 
 class CryptoTradingSystem:

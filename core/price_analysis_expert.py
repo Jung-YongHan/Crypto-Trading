@@ -7,7 +7,7 @@ from autogen_agentchat.messages import TextMessage
 from autogen_core import CancellationToken
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
-from multi_agent_system.trading_system.utils.time_utils import calculate_elapsed_time
+from utils.time_utils import calculate_elapsed_time
 
 
 class PriceAnalysisExpert(AssistantAgent):

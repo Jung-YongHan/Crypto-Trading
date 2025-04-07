@@ -3,6 +3,10 @@ from typing import Dict, Any
 
 import pandas as pd
 
+import warnings
+
+warnings.filterwarnings("ignore", category=UserWarning, module="pandas")
+
 
 class RecordManager:
     def __init__(self, system_name: str):
