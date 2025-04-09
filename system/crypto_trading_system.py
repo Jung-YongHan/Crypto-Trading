@@ -62,13 +62,15 @@ class CryptoTradingSystem:
         4. 매매 실행 후 성찰 보고서를 갱신
         5. 반복 수행
         """
-        print("-------------- 투자 시스템 시작 --------------")
+        print("######################### 투자 시스템 시작 ##########################")
+        print("---------------------------------------------------------------------")
+        print("시스템명:", self.system_name)
         print("투자 시작 캔들:", self.start_date)
         print("투자 종료 캔들:", self.end_date)
         print("투자 대상 코인:", self.coin)
         print("캔들 단위:", self.candle_unit)
         print("초기 현금:", self.portfolio_manager.current_cash)
-
+        print("---------------------------------------------------------------------")
         start_time = time.time()
 
         # # 1) 첫 수행 시, 지정된 기간의 일부(예: 5%)만 우선 수집
@@ -93,13 +95,17 @@ class CryptoTradingSystem:
             )
 
             # 2) 수집된 데이터 기반 가격 분석 리포트 생성
-            analysis_report = await self.price_analysis_expert.analyze_trend(
-                price_data=data
+            analysis_report, analysis_time = (
+                await self.price_analysis_expert.analyze_trend(price_data=data)
             )
 
+            self.price_analysis_expert.on_reset()
+
             # 3) 분석 리포트 기반 매매 신호를 생성
-            signal, signal_reason = await self.trading_expert.generate_signal(
-                analysis_report=analysis_report
+            signal, signal_reason, trade_time = (
+                await self.trading_expert.generate_signal(
+                    analysis_report=analysis_report
+                )
             )
 
             # 4) 다음 틱 데이터 수집
@@ -120,7 +126,7 @@ class CryptoTradingSystem:
                 )
 
             print(
-                f"-------------- {self.tmp_end_date} 기준 포트폴리오 현황 --------------\n"
+                f"-------------- {self.tmp_end_date} 기준 포트폴리오 현황 -------------\n"
             )
             if signal == 1:
                 print("Position: 매수")
@@ -131,7 +137,9 @@ class CryptoTradingSystem:
             print(
                 f"\n현금: {self.portfolio_manager.current_cash}, 코인 수량: {self.portfolio_manager.current_position}"
             )
-            print("-------------------------------------------------------------------")
+            print(
+                "---------------------------------------------------------------------"
+            )
 
             self.record_manager.record_step(
                 {
@@ -146,6 +154,8 @@ class CryptoTradingSystem:
                     "current_position": self.portfolio_manager.current_position,
                     "price_analysis_report": analysis_report,
                     "trading_reason": signal_reason,
+                    "response_time_analysis": analysis_time,
+                    "response_time_trade": trade_time,
                 }
             )
 
@@ -187,7 +197,13 @@ class CryptoTradingSystem:
                 "current_position": self.portfolio_manager.current_position,
                 "price_analysis_report": None,
                 "trading_reason": None,
+                "response_time_analysis": None,
+                "response_time_trade": None,
             }
+        )
+
+        print(
+            f"######################## 투자 시스템 종료 ############################\n"
         )
 
     async def _calculate_partial_end_date(

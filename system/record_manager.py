@@ -3,10 +3,6 @@ from typing import Dict, Any
 
 import pandas as pd
 
-import warnings
-
-warnings.filterwarnings("ignore", category=UserWarning, module="pandas")
-
 
 class RecordManager:
     def __init__(self, system_name: str):
@@ -29,11 +25,13 @@ class RecordManager:
             "current_position": "float64",  # 현재 보유 수량(코인 단위)
             "price_analysis_report": "string",  # 가격 분석 리포트
             "trading_reason": "string",  # 매매 신호 생성 이유
+            "response_time_analysis": "Float64",  # 분석 응답 시간
+            "response_time_trade": "Float64",  # 투자 결정 응답 시간
         }
 
         if os.path.exists(self.file_path):
             self.df = pd.read_csv(
-                self.file_path, dtype=str, encoding="cp949"
+                self.file_path, dtype=str, encoding="utf-8"
             )  # 일단 문자열로 불러오고
             self.df = self._cast_types(self.df)  # 타입 변환
         else:
@@ -76,6 +74,10 @@ class RecordManager:
                     f"[RecordManager] 컬럼 '{col}' 값 변환 실패: {val} → {dtype} / {e}"
                 )
 
+        import warnings
+
+        warnings.filterwarnings("ignore")
+
         if not existing_idx.empty:
             # 이미 존재하면 해당 행 업데이트
             idx = existing_idx[0]
@@ -89,7 +91,7 @@ class RecordManager:
 
     def save(self):
         self.df = self.df.sort_values(by="datetime")  # 기본은 ascending=True → 오름차순
-        self.df.to_csv(self.file_path, index=False, encoding="cp949")
+        self.df.to_csv(self.file_path, index=False, encoding="utf-8")
 
     def get_dataframe(self) -> pd.DataFrame:
         return self.df
