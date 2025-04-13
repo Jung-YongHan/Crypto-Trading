@@ -25,8 +25,11 @@ class TradingExpert(AssistantAgent):
 You are an expert in generating trading signals.
 
 Your task:
-1. Generate a trading signal, strictly following the format described below.
-2. The trading signal must be one of the following integers only(1, 0, -1)
+1. You will be given the follwing input information:
+    - Current holdings of cryptocurrency and cash
+    - PriceAnalysisExpert's report on price trend analysis
+2. Based on this, generate a trading signal for the clsing price of the next candlestick.
+3. The trading signal must be one of the following integers only: 1, 0, -1
 
 Output Format Requirements (MANDATORY):
 - Line 1: A single integer (one of 1, 0, -1).
