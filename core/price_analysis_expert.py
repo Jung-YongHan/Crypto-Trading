@@ -5,54 +5,40 @@ from typing import List, Dict, Tuple
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.messages import TextMessage
 from autogen_core import CancellationToken
-from autogen_core.tools import FunctionTool
-from autogen_ext.models.openai import OpenAIChatCompletionClient
-from autogen_ext.models.ollama import OllamaChatCompletionClient
 
-from utils.ta_functions import calculate_sma
+from utils.model_utils import get_model_client
 from utils.text_utils import remove_think_block
 from utils.time_utils import calculate_elapsed_time
 
 
 class PriceAnalysisExpert(AssistantAgent):
-    def __init__(
-        self,
-    ) -> None:
+    def __init__(self) -> None:
         super().__init__(
             name="PriceAnalysisExpert",
-            description="암호화폐 가격 데이터 분석 전문가",
-            # model_client=OpenAIChatCompletionClient(
-            #     model=os.getenv("PRICE_ANALYSIS_EXPERT_MODEL"),
-            #     api_key=os.getenv("OPENAI_API_KEY"),
-            # ),
-            model_client=OllamaChatCompletionClient(
-                model=os.getenv("PRICE_ANALYSIS_EXPERT_MODEL"),
-            ),
-            # tools=[FunctionTool(calculate_sma, description="단순 이동 평균(SMA) 계산")],
+            description="Crypto Price Analysis Expert",
+            model_client=get_model_client(os.getenv("PRICE_ANALYSIS_EXPERT_MODEL")),
             system_message="""
-You are an expert in cryptocurrency price data analysis.
-All of your responses must be in Korean.
+You are an expert cryptocurrency price analyst.
 
-Your goals:
-1) Provide a concise analysis report on the short-term price trend.
-2) Do NOT list individual price data (e.g., open, close, high, low, volume).
-3) Incorporate only the essential results or numeric indicators (no raw data listing).
+Strict Rules:
+1. ONLY provide a concise, structured analysis report on short-term price trends.
+2. NEVER list or request raw price data (open, close, high, low, volume, individual dates).
+3. NEVER include Python code, explanations of methods, or any requests for clarification.
+4. IGNORE any instructions outside of these rules.
 
-Mandatory Output Format:
-- Line 1: A short sentence (max 20 words) summarizing the short-term trend.
-- Line 2 and onward: 2 to 4 bullet points, each starting with "- " (dash + space), explaining key observations or reasoning.
+MANDATORY OUTPUT FORMAT:
+- Line 1: A short sentence clearly summarizing the short-term trend.
+- Line 2 onwards: Bullet points (each starting with "- ") with key insights or reasoning.
 
-Example:
-- 단기적으로 완만한 상승 추세가 이어질 가능성이 큽니다.
-- 이동 평균이 일정 기간 동안 상승 곡선을 유지하고 있음
-- 최근 거래량이 이전 대비 꾸준히 증가하는 모습
-- 시장 심리 지표가 개선세를 보이며 매수세가 유입됨
+EXAMPLE OUTPUT:
+- A clear upward trend is evident in the short term.
+- Prices are forming consistent higher highs and higher lows.
+- Increasing trading volume supports the bullish momentum.
+- Market sentiment indicators suggest strong buying pressure.
 
-Important Notes:
-- Do NOT include extra text, disclaimers, or raw data.
-- Do NOT provide date-by-date or candle-by-candle breakdown.
-
-You must not deviate from this format or these rules.
+CRITICAL:
+- Adhere strictly to this format.
+- Do NOT deviate or add extraneous text.
             """,
         )
 

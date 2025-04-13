@@ -3,6 +3,7 @@ import time
 from datetime import datetime, timedelta
 from typing import Tuple
 
+from autogen_core import CancellationToken
 from dotenv import load_dotenv
 
 from core.constants import (
@@ -98,8 +99,7 @@ class CryptoTradingSystem:
             analysis_report, analysis_time = (
                 await self.price_analysis_expert.analyze_trend(price_data=data)
             )
-
-            self.price_analysis_expert.on_reset()
+            await self.price_analysis_expert.on_reset(CancellationToken())
 
             # 3) 분석 리포트 기반 매매 신호를 생성
             signal, signal_reason, trade_time = (
@@ -107,6 +107,7 @@ class CryptoTradingSystem:
                     analysis_report=analysis_report
                 )
             )
+            await self.trading_expert.on_reset(CancellationToken())
 
             # 4) 다음 틱 데이터 수집
             self.tmp_start_date, self.tmp_end_date = await self.set_dates(
@@ -129,13 +130,13 @@ class CryptoTradingSystem:
                 f"-------------- {self.tmp_end_date} 기준 포트폴리오 현황 -------------\n"
             )
             if signal == 1:
-                print("Position: 매수")
+                print("Position: Buy")
             elif signal == 0:
-                print("Position: 보유")
+                print("Position: Hold")
             else:
-                print("Position: 매도")
+                print("Position: Sell")
             print(
-                f"\n현금: {self.portfolio_manager.current_cash}, 코인 수량: {self.portfolio_manager.current_position}"
+                f"\nCash: {self.portfolio_manager.current_cash}, Amount of Coins: {self.portfolio_manager.current_position}"
             )
             print(
                 "---------------------------------------------------------------------"

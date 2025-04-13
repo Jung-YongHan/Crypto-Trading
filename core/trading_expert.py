@@ -6,34 +6,27 @@ from typing import Tuple
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.messages import TextMessage
 from autogen_core import CancellationToken
-from autogen_ext.models.openai import OpenAIChatCompletionClient
-from autogen_ext.models.ollama import OllamaChatCompletionClient
 
+from utils.model_utils import get_model_client
 from utils.time_utils import calculate_elapsed_time
 from utils.text_utils import remove_think_block
 
 
+# TODO: 현재 현금 또는 코인 보유 현황도 같이 넘겨줘서 보고서 재작성
 class TradingExpert(AssistantAgent):
     def __init__(
         self,
     ) -> None:
         super().__init__(
             name="TradingExpert",
-            description="투자 전문가",
-            # model_client=OpenAIChatCompletionClient(
-            #     model=os.getenv("PRICE_ANALYSIS_EXPERT_MODEL"),
-            #     api_key=os.getenv("OPENAI_API_KEY"),
-            # ),
-            model_client=OllamaChatCompletionClient(
-                model=os.getenv("PRICE_ANALYSIS_EXPERT_MODEL"),
-            ),
+            description="Trading Expert",
+            model_client=get_model_client(os.getenv("TRADING_EXPERT_MODEL")),
             system_message="""
 You are an expert in generating trading signals.
 
 Your task:
-1. Generate a trading signal in Korean, strictly following the format described below.
+1. Generate a trading signal, strictly following the format described below.
 2. The trading signal must be one of the following integers only(1, 0, -1)
-3. The entire response must be in Korean (no English, no extra text).
 
 Output Format Requirements (MANDATORY):
 - Line 1: A single integer (one of 1, 0, -1).
@@ -42,11 +35,11 @@ Output Format Requirements (MANDATORY):
 
 Example of Correct Output:
 1
-- 가격이 단기 상승 추세에 있음
-- 모멘텀 지표가 과매도 구간에서 벗어남
-- 유효 지지선 유지
-- 시장 심리가 개선됨
-- 주요 지표가 과매도 구간에서 상승 추세로 전환됨
+- The price is in a short-term uptrend.
+- Momentum indicators have moved out of the oversold zone.
+- A valid support level is being maintained.
+- Market sentiment has improved.
+- Key indicators have shifted from the oversold zone to an upward trend.
 
 No other content or formatting should appear in your response. 
             """,
@@ -77,32 +70,32 @@ No other content or formatting should appear in your response.
         )
 
         content = remove_think_block(response.chat_message.content)
-        lines = content.splitlines()
-        match = re.match(r"-?\d+", lines[0])
-        if match:
-            signal = int(match.group())
-            reasons = "\n    ".join(lines[1:])
+
+        signal, reasons = self.parse_signal_and_reasons(content)
+
         if signal == 1:
             reason = f"""
 # Signal: 
-    - 매수
+    - Buy
 # Reason: 
     {reasons}
 """
         elif signal == 0:
             reason = f"""
 # Signal: 
-    - 보유
+    - Hold
+# Reason: 
+    {reasons}
+"""
+        elif signal == -1:
+            reason = f"""
+# Signal: 
+    - Sell
 # Reason: 
     {reasons}
 """
         else:
-            reason = f"""
-# Signal: 
-    - 매도
-# Reason: 
-    {reasons}
-"""
+            raise ValueError("신호 생성 오류(감지하지 못함)")
 
         end_time = time.time()
         elapsed_day, elapsed_hour, elapsed_minute, elapsed_second = (
@@ -115,3 +108,32 @@ No other content or formatting should appear in your response.
         )
         print("---------------------------------------------------------------------")
         return signal, reasons, (end_time - start_time)
+
+    def parse_signal_and_reasons(self, content: str):
+        """content에서 신호와 이유를 추출합니다.
+        신호는 1, 0, -1 중 하나로 표현됩니다.
+        이유는 '-'로 시작하는 문장으로 표현됩니다.
+
+        Args:
+            content (str): 신호와 이유가 포함된 문자열
+
+        Returns:
+            _type_: 신호(int), 이유(str)
+        """
+        # 1) 신호 추출
+        signal_pattern = re.compile(r"^\s*(-1|0|1)\s*$", re.MULTILINE)
+        signal_match = signal_pattern.search(content)
+        if signal_match:
+            signal = int(signal_match.group(1))
+        else:
+            # 신호가 없는 경우에 대한 예외 처리
+            signal = None
+
+        # 2) 모든 이유 추출
+        reason_pattern = re.compile(r"^\s*-\s+(.*)", re.MULTILINE)
+        reason_matches = reason_pattern.findall(content)
+
+        # 리스트를 합치거나, 필요한 형태로 가공
+        reasons = "\n    ".join(reason_matches)
+
+        return signal, reasons
