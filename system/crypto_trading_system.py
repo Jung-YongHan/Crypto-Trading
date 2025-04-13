@@ -101,6 +101,10 @@ class CryptoTradingSystem:
             )
             await self.price_analysis_expert.on_reset(CancellationToken())
 
+            analysis_report = await self.generate_report(
+                analysis_report=analysis_report
+            )
+
             # 3) 분석 리포트 기반 매매 신호를 생성
             signal, signal_reason, trade_time = (
                 await self.trading_expert.generate_signal(
@@ -206,6 +210,26 @@ class CryptoTradingSystem:
         print(
             f"######################## 투자 시스템 종료 ############################\n"
         )
+
+    async def generate_report(self, analysis_report: str) -> str:
+        """
+        포트폴리오 및 가격 분석 리포트에 기반한 최종 리포트를 생성합니다.
+
+        Args:
+            analysis_report (str): 가격 분석 리포트
+
+        Returns:
+            str: 생성된 리포트
+        """
+        report = f"""
+# Current Portfolio:
+- Cash: {self.portfolio_manager.current_cash}
+- Amount of Coins: {self.portfolio_manager.current_position}
+
+# Price Analysis Report:
+{analysis_report}
+        """
+        return report
 
     async def _calculate_partial_end_date(
         self,
