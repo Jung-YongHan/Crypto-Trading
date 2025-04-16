@@ -13,11 +13,17 @@ from core.constants import (
 
 class DataCollector:
 
-    def __init__(self):
+    def __init__(self, limit: int = 0):
         self.collected_data: List[Dict] = []
+        self.total_collected_data: List[Dict] = []
+        self.limit = limit
 
     async def collect_price_data(
-        self, coin: str, start_date: str, end_date: str, candle_unit: str
+        self,
+        coin: str,
+        start_date: str,
+        end_date: str,
+        candle_unit: str,
     ) -> List[Dict]:
         """
         지정된 기간 동안 특정 코인 가격 데이터를 외부 거래소(예: Upbit)에서 수집.
@@ -106,6 +112,16 @@ class DataCollector:
                             "volume": c["candle_acc_trade_volume"],
                         }
                     )
+                    self.total_collected_data.append(
+                        {
+                            "date": kst_time,
+                            "open": c["opening_price"],
+                            "close": c["trade_price"],
+                            "high": c["high_price"],
+                            "low": c["low_price"],
+                            "volume": c["candle_acc_trade_volume"],
+                        }
+                    )
                     existing_dates.add(kst_time)
 
             oldest_kst_str = candles[0]["candle_date_time_kst"]
@@ -115,14 +131,22 @@ class DataCollector:
         self.collected_data.sort(
             key=lambda x: datetime.strptime(x["date"], "%Y-%m-%dT%H:%M:%S")
         )
+        self.total_collected_data.sort(
+            key=lambda x: datetime.strptime(x["date"], "%Y-%m-%dT%H:%M:%S")
+        )
+
+        # 수집된 데이터의 개수가 limit을 초과하면 가장 오래된 데이터부터 삭제
+        if self.limit >= 1 and len(self.collected_data) > self.limit:
+            self.collected_data = self.collected_data[-self.limit :]
+
         return self.collected_data
 
 
 if __name__ == "__main__":
-    collector = DataCollector()
+    collector = DataCollector(limit=3)
     data = asyncio.run(
         collector.collect_price_data(
-            "KRW-BTC", "2025-03-01 09:00:00", "2025-03-04 09:00:00", "1m"
+            "KRW-BTC", "2025-03-01 09:00:00", "2025-03-10 09:00:00", "1d"
         )
     )
     print(data)

@@ -7,12 +7,12 @@ from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.messages import TextMessage
 from autogen_core import CancellationToken
 
+from core.prompts import TRADING_EXPERT_SYSTEM_MESSAGE
 from utils.model_utils import get_model_client
 from utils.time_utils import calculate_elapsed_time
 from utils.text_utils import remove_think_block
 
 
-# TODO: 현재 현금 또는 코인 보유 현황도 같이 넘겨줘서 보고서 재작성
 class TradingExpert(AssistantAgent):
     def __init__(
         self,
@@ -21,31 +21,7 @@ class TradingExpert(AssistantAgent):
             name="TradingExpert",
             description="Trading Expert",
             model_client=get_model_client(os.getenv("TRADING_EXPERT_MODEL")),
-            system_message="""
-You are an expert in generating trading signals.
-
-Your task:
-1. You will be given the follwing input information:
-    - Current holdings of cryptocurrency and cash
-    - PriceAnalysisExpert's report on price trend analysis
-2. Based on this, generate a trading signal for the clsing price of the next candlestick.
-3. The trading signal must be one of the following integers only: 1, 0, -1
-
-Output Format Requirements (MANDATORY):
-- Line 1: A single integer (one of 1, 0, -1).
-- Line 2 and onward: Each reason must begin with '- ' (dash + space).  
-- Do NOT include code blocks, headings, or any other text beyond what is specified.
-
-Example of Correct Output:
-1
-- The price is in a short-term uptrend.
-- Momentum indicators have moved out of the oversold zone.
-- A valid support level is being maintained.
-- Market sentiment has improved.
-- Key indicators have shifted from the oversold zone to an upward trend.
-
-No other content or formatting should appear in your response. 
-            """,
+            system_message=TRADING_EXPERT_SYSTEM_MESSAGE,
         )
 
     async def generate_signal(self, analysis_report: str) -> Tuple[int, str, float]:
@@ -98,7 +74,7 @@ No other content or formatting should appear in your response.
     {reasons}
 """
         else:
-            raise ValueError("신호 생성 오류(감지하지 못함)")
+            raise ValueError(f"{content}에서 신호를 찾을 수 없습니다.")
 
         end_time = time.time()
         elapsed_day, elapsed_hour, elapsed_minute, elapsed_second = (
