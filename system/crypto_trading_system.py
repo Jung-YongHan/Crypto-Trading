@@ -26,12 +26,13 @@ class CryptoTradingSystem:
     def __init__(
         self,
         system_name: str,
-        initial_cash: int,
+        initial_cash: float,
         fee_rate: float,
         coin: str,
         start_date: str,
         end_date: str,
         candle_unit: str,
+        limit: int = 0,
     ):
         self.system_name = system_name
         self.initial_cash = initial_cash
@@ -40,9 +41,10 @@ class CryptoTradingSystem:
         self.start_date = start_date
         self.end_date = end_date
         self.candle_unit = candle_unit
+        self.limit = limit
 
-        self.data_collector = DataCollector()
-        self.price_analysis_expert = PriceAnalysisExpert()
+        self.data_collector = DataCollector(limit=limit)
+        self.price_analysis_expert = PriceAnalysisExpert(limit=limit)
         self.trading_expert = TradingExpert()
         self.portfolio_manager = PortfolioManager(
             initial_cash=initial_cash, fee_rate=fee_rate
@@ -81,6 +83,8 @@ class CryptoTradingSystem:
         #     portion=0.05,
         #     candle_unit=self.candle_unit,
         # )
+
+        await self.collect_dummy_data()
 
         self.tmp_end_date = self.start_date
 
@@ -211,6 +215,23 @@ class CryptoTradingSystem:
             f"######################## 투자 시스템 종료 ############################\n"
         )
 
+    async def collect_dummy_data(self):
+        """
+        백테스팅 전 limit 기간만큼의 더미 데이터를 미리 수집합니다(기술 지표 분석을 위해).
+        """
+        fmt = "%Y-%m-%d %H:%M:%S"
+        start_dt = datetime.strptime(self.start_date, fmt)
+        adjusted_start_dt_1 = start_dt - timedelta(days=self.limit - 1)
+        adjusted_start_dt_2 = (start_dt - timedelta(days=1)).strftime(fmt)
+        tmp_start_date = adjusted_start_dt_1.strftime(fmt)
+
+        _ = await self.data_collector.collect_price_data(
+            coin=self.coin,
+            start_date=tmp_start_date,
+            end_date=adjusted_start_dt_2,
+            candle_unit=self.candle_unit,
+        )
+
     async def generate_report(self, analysis_report: str) -> str:
         """
         포트폴리오 및 가격 분석 리포트에 기반한 최종 리포트를 생성합니다.
@@ -295,15 +316,8 @@ class CryptoTradingSystem:
         return start_dt.strftime(fmt), new_end_dt.strftime(fmt)
 
     async def backtest_buy_and_hold(self):
-        all_data = await self.data_collector.collect_price_data(
-            coin=self.coin,
-            start_date=self.start_date,
-            end_date=self.end_date,
-            candle_unit=self.candle_unit,
-        )
-
-        buy_amount = all_data[0]["open"]
-        sell_amount = all_data[-1]["close"]
+        buy_amount = self.data_collector.total_collected_data[0]["open"]
+        sell_amount = self.data_collector.total_collected_data[-1]["close"]
         # 수익률 계산
         profit = (sell_amount - buy_amount) / buy_amount * 100
         print(f"Buy and Hold 전략 수익률: {profit:.2f}%")
@@ -313,12 +327,13 @@ class AsyncCryptoTradingSystem(CryptoTradingSystem):
     def __init__(
         self,
         system_name: str,
-        initial_cash: int,
+        initial_cash: float,
         fee_rate: float,
         coin: str,
         start_date: str,
         end_date: str,
         candle_unit: str,
+        limit: int,
     ):
         super().__init__(
             system_name=system_name,
@@ -328,6 +343,7 @@ class AsyncCryptoTradingSystem(CryptoTradingSystem):
             start_date=start_date,
             end_date=end_date,
             candle_unit=candle_unit,
+            limit=limit,
         )
 
     def run(self):
@@ -336,12 +352,13 @@ class AsyncCryptoTradingSystem(CryptoTradingSystem):
 
 def create_system(
     system_name: str,
-    initial_cash: int,
+    initial_cash: float,
     fee_rate: float,
     coin: str,
     start_date: str,
     end_date: str,
     candle_unit: str,
+    limit: int = 0,
 ):
     load_dotenv()
 
@@ -353,4 +370,5 @@ def create_system(
         start_date=start_date,
         end_date=end_date,
         candle_unit=candle_unit,
+        limit=limit,
     )
