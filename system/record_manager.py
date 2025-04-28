@@ -11,7 +11,7 @@ class RecordManager:
         )
         os.makedirs(self.folder_path, exist_ok=True)
 
-        self.file_path = os.path.join(self.folder_path, f"{system_name}_records.csv")
+        self.file_path = os.path.join(self.folder_path, f"{system_name}.csv")
 
         self.column_types = {
             "datetime": "datetime64[ns]",
@@ -29,19 +29,15 @@ class RecordManager:
             "response_time_trade": "Float64",  # 투자 결정 응답 시간
         }
 
+        # 👉 이미 파일이 존재하면 지우고 빈 데이터프레임으로 시작
         if os.path.exists(self.file_path):
-            self.df = pd.read_csv(
-                self.file_path, dtype=str, encoding="utf-8"
-            )  # 일단 문자열로 불러오고
-            self.df = self._cast_types(self.df)  # 타입 변환
-        else:
-            self.df = pd.DataFrame(
-                {
-                    col: pd.Series(dtype=dtype)
-                    for col, dtype in self.column_types.items()
-                }
-            )
-            self.save()
+            os.remove(self.file_path)
+
+        # 새 파일(혹은 방금 삭제한 파일) 기준으로 초기 데이터프레임 생성
+        self.df = pd.DataFrame(
+            {col: pd.Series(dtype=dtype) for col, dtype in self.column_types.items()}
+        )
+        self.save()
 
     def _cast_types(self, df: pd.DataFrame) -> pd.DataFrame:
         """컬럼별 타입 강제 캐스팅"""

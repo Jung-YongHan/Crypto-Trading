@@ -10,6 +10,7 @@ from core.constants import (
     TIME_DELTA_MAP,
     DEFAULT_UNIT,
 )
+from core.data_analyzer import DataAnalyzer
 from core.data_collector import DataCollector
 from core.portfolio_manager import (
     PortfolioManager,
@@ -99,9 +100,16 @@ class CryptoTradingSystem:
                 candle_unit=self.candle_unit,
             )
 
+            current_info = {
+                "current_cash": self.portfolio_manager.current_cash,
+                "current_position": self.portfolio_manager.current_position,
+            }
+
             # 2) 수집된 데이터 기반 가격 분석 리포트 생성
             analysis_report, analysis_time = (
-                await self.price_analysis_expert.analyze_trend(price_data=data)
+                await self.price_analysis_expert.analyze_trend(
+                    price_data=data, current_info=current_info
+                )
             )
             await self.price_analysis_expert.on_reset(CancellationToken())
 
@@ -124,6 +132,9 @@ class CryptoTradingSystem:
             price_data = await self.data_collector.collect_price_data(
                 self.coin, self.tmp_start_date, self.tmp_end_date, self.candle_unit
             )
+
+            current_cash = self.portfolio_manager.current_cash
+            current_position = self.portfolio_manager.current_position
 
             # 5) 매매 실행
             if price_data:
@@ -159,8 +170,8 @@ class CryptoTradingSystem:
                     "close": price_data[-2]["close"],
                     "volume": price_data[-2]["volume"],
                     "next_action": signal,
-                    "current_cash": self.portfolio_manager.current_cash,
-                    "current_position": self.portfolio_manager.current_position,
+                    "current_cash": current_cash,
+                    "current_position": current_position,
                     "price_analysis_report": analysis_report,
                     "trading_reason": signal_reason,
                     "response_time_analysis": analysis_time,
@@ -176,13 +187,16 @@ class CryptoTradingSystem:
                 open_price=price_data[-1]["close"],
             )
 
-        # 수익률 계산
-        total_profit = (
-            (self.portfolio_manager.current_cash - self.initial_cash)
-            / self.initial_cash
-            * 100
+        data_path = f"data/{self.system_name}.csv"
+        performance_metrics = DataAnalyzer(data_path).performance_metrics()
+
+        print("***멀티 에이전트 시스템 전략 성과 지표***")
+        print(f"최종 수익률: {performance_metrics['return_pct']:.2f}%")
+        print(f"최대 낙폭: {performance_metrics['mdd']:.2f}%")
+        print(
+            f"승률: {performance_metrics['win_rate']}% ({performance_metrics['total_trades']})"
         )
-        print(f"멀티 에이전트 시스템 전략 수익률: {total_profit:.2f}")
+        print(f"샤프 지수: {performance_metrics['sharpe_index']:.2f}\n")
         await self.backtest_buy_and_hold()
 
         end_time = time.time()
@@ -218,10 +232,12 @@ class CryptoTradingSystem:
     async def collect_dummy_data(self):
         """
         백테스팅 전 limit 기간만큼의 더미 데이터를 미리 수집합니다(기술 지표 분석을 위해).
+        limit이 없다면 약 40개 데이터 수집(macd 계산을 위해)
         """
         fmt = "%Y-%m-%d %H:%M:%S"
         start_dt = datetime.strptime(self.start_date, fmt)
-        adjusted_start_dt_1 = start_dt - timedelta(days=self.limit - 1)
+        limit = self.limit if self.limit > 0 else 40
+        adjusted_start_dt_1 = start_dt - timedelta(days=limit - 1)
         adjusted_start_dt_2 = (start_dt - timedelta(days=1)).strftime(fmt)
         tmp_start_date = adjusted_start_dt_1.strftime(fmt)
 
@@ -316,11 +332,11 @@ class CryptoTradingSystem:
         return start_dt.strftime(fmt), new_end_dt.strftime(fmt)
 
     async def backtest_buy_and_hold(self):
-        buy_amount = self.data_collector.total_collected_data[0]["open"]
+        buy_amount = self.data_collector.total_collected_data[self.limit - 1]["open"]
         sell_amount = self.data_collector.total_collected_data[-1]["close"]
         # 수익률 계산
         profit = (sell_amount - buy_amount) / buy_amount * 100
-        print(f"Buy and Hold 전략 수익률: {profit:.2f}%")
+        print(f"*Buy and Hold 전략 수익률: {profit:.2f}%")
 
 
 class AsyncCryptoTradingSystem(CryptoTradingSystem):
