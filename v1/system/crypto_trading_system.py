@@ -6,21 +6,21 @@ from typing import Tuple
 from autogen_core import CancellationToken
 from dotenv import load_dotenv
 
-from core.constants import (
+from v1.core.constants import (
     TIME_DELTA_MAP,
     DEFAULT_UNIT,
 )
-from core.data_analyzer import DataAnalyzer
-from core.data_collector import DataCollector
-from core.portfolio_manager import (
+from v1.core.data_analyzer import DataAnalyzer
+from v1.core.data_collector import DataCollector
+from v1.core.portfolio_manager import (
     PortfolioManager,
 )
-from core.price_analysis_expert import (
+from v1.core.price_analysis_expert import (
     PriceAnalysisExpert,
 )
-from core.trading_expert import TradingExpert
-from system.record_manager import RecordManager
-from utils.time_utils import calculate_elapsed_time
+from v1.core.trading_expert import TradingExpert
+from v1.system.record_manager import RecordManager
+from v1.utils.time_utils import calculate_elapsed_time
 
 
 class CryptoTradingSystem:

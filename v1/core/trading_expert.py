@@ -7,10 +7,10 @@ from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.messages import TextMessage
 from autogen_core import CancellationToken
 
-from core.prompts import TRADING_EXPERT_SYSTEM_MESSAGE
-from utils.model_utils import get_model_client
-from utils.time_utils import calculate_elapsed_time
-from utils.text_utils import remove_think_block
+from v1.core.prompts import TRADING_EXPERT_SYSTEM_MESSAGE
+from v1.utils.model_utils import get_model_client
+from v1.utils.time_utils import calculate_elapsed_time
+from v1.utils.text_utils import remove_think_block
 
 
 class TradingExpert(AssistantAgent):

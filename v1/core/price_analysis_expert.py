@@ -8,13 +8,13 @@ from autogen_core import CancellationToken, FunctionCall
 from autogen_core.tools import FunctionTool
 from autogen_agentchat.messages import ToolCallRequestEvent, ToolCallExecutionEvent
 
-from core.prompts import (
+from v1.core.prompts import (
     PRICE_ANALYSIS_EXPERT_SYSTEM_MESSAGE,
 )
-from utils.model_utils import get_model_client
-from utils.ta_functions import TAITools
-from utils.text_utils import remove_think_block
-from utils.time_utils import calculate_elapsed_time
+from v1.utils.model_utils import get_model_client
+from v1.utils.ta_functions import TAITools
+from v1.utils.text_utils import remove_think_block
+from v1.utils.time_utils import calculate_elapsed_time
 
 
 class PriceAnalysisExpert(AssistantAgent):

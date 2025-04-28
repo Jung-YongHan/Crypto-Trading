@@ -4,7 +4,7 @@ from typing import List, Dict
 
 import requests
 
-from core.constants import (
+from v1.core.constants import (
     UNIT_MAP,
     DEFAULT_UNIT,
     TIME_DELTA_MAP,
